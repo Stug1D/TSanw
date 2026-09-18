@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "id": "3",
+      "name": "Anna Weber",
+      "email": "anna.weber@example.com",
+      "company": {
+        "name": "Weber Solutions"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Paul Fischer",
+      "email": "paul.fischer@example.com",
+      "company": {
+        "name": "Fischer Digital"
+      }
+    },
+    {
+      "name": "test",
+      "email": "te@web.de",
+      "company": {
+        "name": "2"
+      },
+      "id": "3NNIOb8Cnnk"
+    }
+  ],
+  "tasks": [],
+  "$schema": "./node_modules/json-server/schema.json"
+}
