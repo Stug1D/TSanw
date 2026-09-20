@@ -18,4 +18,11 @@ export interface Task {
   id: EntityId
   title: string
   completed: boolean
+  userId?: EntityId | null
+}
+
+export interface CreateTaskInput {
+  title: string
+  completed: boolean
+  userId?: EntityId | null
 }

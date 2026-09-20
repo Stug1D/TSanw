@@ -100,11 +100,33 @@ app.innerHTML = `
       <div class="task-controls">
         <button id="add-task-toggle" class="primary-btn" type="button">Aufgabe hinzufügen</button>
       </div>
+      <div class="task-filters">
+        <div class="filter-group">
+          <label for="task-status-filter">Status</label>
+          <select id="task-status-filter">
+            <option value="all">Alle</option>
+            <option value="open">Offen</option>
+            <option value="done">Erledigt</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="task-user-filter">Benutzer</label>
+          <select id="task-user-filter">
+            <option value="all">Alle Benutzer</option>
+          </select>
+        </div>
+      </div>
       <div id="task-form-wrapper" class="task-form-wrapper hidden">
         <form id="task-form" class="task-form">
           <div class="form-row">
             <label for="new-task-title">Aufgabe</label>
             <input id="new-task-title" name="title" type="text" placeholder="z. B. Projekt fertigstellen" required />
+          </div>
+          <div class="form-row">
+            <label for="new-task-user">Zugewiesen an</label>
+            <select id="new-task-user" name="userId">
+              <option value="">Ohne Benutzer</option>
+            </select>
           </div>
           <div class="form-actions">
             <button class="primary-btn" type="submit">Speichern</button>
@@ -124,6 +146,9 @@ const taskErrorElement = document.querySelector<HTMLDivElement>('#task-error')
 const taskFormWrapperElement = document.querySelector<HTMLElement>('#task-form-wrapper')
 const taskFormElement = document.querySelector<HTMLFormElement>('#task-form')
 const taskTitleInputElement = document.querySelector<HTMLInputElement>('#new-task-title')
+const taskUserSelectElement = document.querySelector<HTMLSelectElement>('#new-task-user')
+const taskStatusFilterElement = document.querySelector<HTMLSelectElement>('#task-status-filter')
+const taskUserFilterElement = document.querySelector<HTMLSelectElement>('#task-user-filter')
 const addTaskToggleElement = document.querySelector<HTMLButtonElement>('#add-task-toggle')
 const cancelTaskAddElement = document.querySelector<HTMLButtonElement>('#cancel-task-add')
 const searchInputElement = document.querySelector<HTMLInputElement>('#user-search')
@@ -146,6 +171,9 @@ if (
   !taskFormWrapperElement ||
   !taskFormElement ||
   !taskTitleInputElement ||
+  !taskUserSelectElement ||
+  !taskStatusFilterElement ||
+  !taskUserFilterElement ||
   !addTaskToggleElement ||
   !cancelTaskAddElement ||
   !searchInputElement ||
@@ -170,6 +198,9 @@ const taskError = taskErrorElement
 const taskFormWrapper = taskFormWrapperElement
 const taskForm = taskFormElement
 const taskTitleInput = taskTitleInputElement
+const taskUserSelect = taskUserSelectElement
+const taskStatusFilter = taskStatusFilterElement
+const taskUserFilter = taskUserFilterElement
 const addTaskToggle = addTaskToggleElement
 const cancelTaskAdd = cancelTaskAddElement
 const searchInput = searchInputElement
@@ -186,6 +217,8 @@ const editUserEmailInput = editUserEmailInputElement
 const editUserCompanyInput = editUserCompanyInputElement
 
 let editingUserId: string | number | null = null
+let selectedTaskStatus: 'all' | 'open' | 'done' = 'all'
+let selectedTaskUserId: string | number | 'all' = 'all'
 
 // -------------------------------
 // Error helpers
@@ -201,10 +234,40 @@ function hideTaskError(): void {
 // -------------------------------
 // Task rendering and optimistic updates
 // -------------------------------
+function renderTaskFilters(): void {
+  const userOptions = users
+    .map(
+      (user) =>
+        `<option value="${String(user.id)}" ${selectedTaskUserId === String(user.id) ? 'selected' : ''}>${user.name}</option>`,
+    )
+    .join('')
+
+  taskUserFilter.innerHTML = `<option value="all">Alle Benutzer</option>${userOptions}`
+  taskUserFilter.value = selectedTaskUserId === 'all' ? 'all' : String(selectedTaskUserId)
+
+  taskUserSelect.innerHTML = `<option value="">Ohne Benutzer</option>${userOptions}`
+}
+
 const renderTaskList = (): void => {
+  const filteredTasks = tasks.filter((task) => {
+    const matchesStatus =
+      selectedTaskStatus === 'all' ||
+      (selectedTaskStatus === 'open' && !task.completed) ||
+      (selectedTaskStatus === 'done' && task.completed)
+
+    const taskUser = task.userId === undefined || task.userId === null ? 'none' : String(task.userId)
+    const matchesUser =
+      selectedTaskUserId === 'all' ||
+      (selectedTaskUserId === 'none' && taskUser === 'none') ||
+      taskUser === String(selectedTaskUserId)
+
+    return matchesStatus && matchesUser
+  })
+
   renderTasks({
     taskList,
-    tasks,
+    tasks: filteredTasks,
+    users,
     onToggle: async (taskId, checked) => {
       // Speichere den alten Zustand, damit wir im Fehlerfall zurückrollen können.
       const previousTasks = [...tasks]
@@ -268,6 +331,7 @@ function handleDelete(userId: string | number): void {
   renderUsers({
     userList,
     users,
+    tasks,
     query: searchInput.value,
     onDelete: handleDelete,
     onEdit: handleEdit,
@@ -281,6 +345,7 @@ function handleDelete(userId: string | number): void {
       renderUsers({
         userList,
         users,
+        tasks,
         query: searchInput.value,
         onDelete: handleDelete,
         onEdit: handleEdit,
@@ -291,6 +356,7 @@ function handleDelete(userId: string | number): void {
       renderUsers({
         userList,
         users,
+        tasks,
         query: searchInput.value,
         onDelete: handleDelete,
         onEdit: handleEdit,
@@ -318,9 +384,11 @@ async function loadUsers(): Promise<void> {
 
   try {
     users = await loadUserRecords()
+    renderTaskFilters()
     renderUsers({
       userList,
       users,
+      tasks,
       query: searchInput.value,
       onDelete: handleDelete,
       onEdit: handleEdit,
@@ -362,6 +430,7 @@ taskForm.addEventListener('submit', async (event) => {
   event.preventDefault()
 
   const title = taskTitleInput.value.trim()
+  const userId = taskUserSelect.value === '' ? null : taskUserSelect.value
 
   if (!title) {
     return
@@ -380,10 +449,11 @@ taskForm.addEventListener('submit', async (event) => {
   renderTasksView()
   hideTaskError()
   taskForm.reset()
+  taskUserSelect.value = ''
   taskFormWrapper.classList.add('hidden')
 
   try {
-    const savedTask = await addTask({ title, completed: false })
+    const savedTask = await addTask({ title, completed: false, userId })
     tasks = tasks.map((task) => (String(task.id) === String(optimisticTask.id) ? savedTask : task))
     renderTasksView()
   } catch (error) {
@@ -443,10 +513,23 @@ searchInput.addEventListener('input', (event) => {
   renderUsers({
     userList,
     users,
+    tasks,
     query: target.value,
     onDelete: handleDelete,
     onEdit: handleEdit,
   })
+})
+
+taskStatusFilter.addEventListener('change', (event) => {
+  const target = event.target as HTMLSelectElement
+  selectedTaskStatus = target.value as 'all' | 'open' | 'done'
+  renderTaskList()
+})
+
+taskUserFilter.addEventListener('change', (event) => {
+  const target = event.target as HTMLSelectElement
+  selectedTaskUserId = target.value === 'all' ? 'all' : target.value
+  renderTaskList()
 })
 
 cancelUserEdit.addEventListener('click', () => {
@@ -494,6 +577,7 @@ editUserForm.addEventListener('submit', async (event) => {
   renderUsers({
     userList,
     users,
+    tasks,
     query: searchInput.value,
     onDelete: handleDelete,
     onEdit: handleEdit,
@@ -510,6 +594,7 @@ editUserForm.addEventListener('submit', async (event) => {
     renderUsers({
       userList,
       users,
+      tasks,
       query: searchInput.value,
       onDelete: handleDelete,
       onEdit: handleEdit,
@@ -519,6 +604,7 @@ editUserForm.addEventListener('submit', async (event) => {
     renderUsers({
       userList,
       users,
+      tasks,
       query: searchInput.value,
       onDelete: handleDelete,
       onEdit: handleEdit,

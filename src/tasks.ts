@@ -1,4 +1,4 @@
-import type { Task } from './types'
+import type { Task, User } from './types'
 
 // Aktualisiert den completed-Status im lokalen State, ohne den Server direkt zu fragen.
 export function updateTaskCompletion(
@@ -27,6 +27,7 @@ export function deleteTaskFromList(
 interface RenderTasksOptions {
   taskList: HTMLUListElement
   tasks: Task[]
+  users: User[]
   onToggle: (taskId: string | number, checked: boolean) => void
   onDelete: (taskId: string | number) => void
 }
@@ -35,21 +36,31 @@ interface RenderTasksOptions {
 export function renderTasks({
   taskList,
   tasks,
+  users,
   onToggle,
   onDelete,
 }: RenderTasksOptions): void {
   taskList.innerHTML = tasks
-    .map(
-      (task) => `
+    .map((task) => {
+      const assignedUser = task.userId
+        ? users.find((user) => String(user.id) === String(task.userId))
+        : undefined
+
+      const assigneeText = assignedUser ? `Zugewiesen an: ${assignedUser.name}` : 'Ohne Benutzer'
+
+      return `
         <li class="task-item ${task.completed ? 'done' : ''}">
           <label class="task-label">
             <input type="checkbox" data-task-id="${task.id}" ${task.completed ? 'checked' : ''} />
-            <span>${task.title}</span>
+            <span class="task-content">
+              <span class="task-title">${task.title}</span>
+              <span class="task-meta">${assigneeText}</span>
+            </span>
           </label>
           <button class="task-delete-btn" type="button" data-task-id="${task.id}">Löschen</button>
         </li>
-      `,
-    )
+      `
+    })
     .join('')
 
   taskList.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((checkbox) => {

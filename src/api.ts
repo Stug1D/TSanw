@@ -72,6 +72,7 @@ export async function fetchTasks(): Promise<Task[]> {
 export interface CreateTaskInput {
   title: string
   completed: boolean
+  userId?: EntityId | null
 }
 
 // Sendet eine neue Aufgabe an den Server.
