@@ -1,4 +1,4 @@
-:root {
+  :root {
   font-family: Inter, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -91,15 +91,18 @@ input {
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
-.add-user-panel {
+.add-user-panel,
+.edit-user-panel {
   margin-bottom: 24px;
 }
 
-.add-user-panel.hidden {
+.add-user-panel.hidden,
+.edit-user-panel.hidden {
   display: none;
 }
 
-.add-user-form {
+.add-user-form,
+.edit-user-form {
   background: #ffffff;
   border: 1px solid #dbe1ff;
   border-radius: 16px;
@@ -107,7 +110,8 @@ input {
   box-shadow: 0 10px 24px rgba(79, 70, 229, 0.08);
 }
 
-.add-user-form h2 {
+.add-user-form h2,
+.edit-user-form h2 {
   margin: 0 0 16px;
   font-size: 1.2rem;
   color: #1f2937;
@@ -270,17 +274,37 @@ input {
   color: #374151;
 }
 
+.user-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.edit-btn,
 .delete-btn {
   border: none;
   border-radius: 8px;
-  background: #ef4444;
-  color: #ffffff;
   padding: 8px 10px;
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.edit-btn {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 .delete-btn:hover {

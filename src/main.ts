@@ -1,13 +1,11 @@
 import './style.css'
 import {
-  createTask,
-  createUser,
-  deleteTask,
-  deleteUser,
-  fetchTasks,
-  fetchUsers,
-  toggleTask,
-} from './api'
+  addTask,
+  deleteTaskRecord,
+  loadTasks as loadTaskRecords,
+  toggleTaskRecord,
+} from './features/tasks'
+import { addUser, deleteUserRecord, loadUsers as loadUserRecords, updateUserRecord } from './features/users'
 import type { Task, User } from './types'
 import { renderUsers } from './userList'
 import { hideError, showError } from './errors'
@@ -64,6 +62,32 @@ app.innerHTML = `
     </form>
   </section>
 
+  <section id="edit-user-panel" class="edit-user-panel hidden">
+    <form id="edit-user-form" class="edit-user-form">
+      <h2>Benutzer bearbeiten</h2>
+
+      <div class="form-row">
+        <label for="edit-user-name">Name</label>
+        <input id="edit-user-name" name="name" type="text" required />
+      </div>
+
+      <div class="form-row">
+        <label for="edit-user-email">E-Mail</label>
+        <input id="edit-user-email" name="email" type="email" required />
+      </div>
+
+      <div class="form-row">
+        <label for="edit-user-company">Firma</label>
+        <input id="edit-user-company" name="company" type="text" required />
+      </div>
+
+      <div class="form-actions">
+        <button class="primary-btn" type="submit">Speichern</button>
+        <button class="secondary-btn" type="button" id="cancel-user-edit">Abbrechen</button>
+      </div>
+    </form>
+  </section>
+
   <main class="user-panel">
     <section>
       <h1>Benutzer</h1>
@@ -108,6 +132,12 @@ const addUserToggleElement = document.querySelector<HTMLButtonElement>('#add-use
 const addUserPanelElement = document.querySelector<HTMLElement>('#add-user-panel')
 const addUserFormElement = document.querySelector<HTMLFormElement>('#add-user-form')
 const cancelUserAddElement = document.querySelector<HTMLButtonElement>('#cancel-user-add')
+const editUserPanelElement = document.querySelector<HTMLElement>('#edit-user-panel')
+const editUserFormElement = document.querySelector<HTMLFormElement>('#edit-user-form')
+const cancelUserEditElement = document.querySelector<HTMLButtonElement>('#cancel-user-edit')
+const editUserNameInputElement = document.querySelector<HTMLInputElement>('#edit-user-name')
+const editUserEmailInputElement = document.querySelector<HTMLInputElement>('#edit-user-email')
+const editUserCompanyInputElement = document.querySelector<HTMLInputElement>('#edit-user-company')
 
 if (
   !userListElement ||
@@ -123,7 +153,13 @@ if (
   !addUserToggleElement ||
   !addUserPanelElement ||
   !addUserFormElement ||
-  !cancelUserAddElement
+  !cancelUserAddElement ||
+  !editUserPanelElement ||
+  !editUserFormElement ||
+  !cancelUserEditElement ||
+  !editUserNameInputElement ||
+  !editUserEmailInputElement ||
+  !editUserCompanyInputElement
 ) {
   throw new Error('Not all UI elements were found')
 }
@@ -142,6 +178,14 @@ const addUserToggle = addUserToggleElement
 const addUserPanel = addUserPanelElement
 const addUserForm = addUserFormElement
 const cancelUserAdd = cancelUserAddElement
+const editUserPanel = editUserPanelElement
+const editUserForm = editUserFormElement
+const cancelUserEdit = cancelUserEditElement
+const editUserNameInput = editUserNameInputElement
+const editUserEmailInput = editUserEmailInputElement
+const editUserCompanyInput = editUserCompanyInputElement
+
+let editingUserId: string | number | null = null
 
 // -------------------------------
 // Error helpers
@@ -176,7 +220,7 @@ const renderTaskList = (): void => {
       hideTaskError()
 
       try {
-        await toggleTask(taskId, checked)
+        await toggleTaskRecord(taskId, checked)
       } catch (error) {
         // Serverfehler: alten Zustand wieder herstellen und Fehler anzeigen.
         tasks = previousTasks
@@ -195,7 +239,7 @@ const renderTaskList = (): void => {
       hideTaskError()
 
       try {
-        await deleteTask(taskId)
+        await deleteTaskRecord(taskId)
       } catch (error) {
         // Serverfehler: Liste wieder auf den alten Stand zurücksetzen.
         tasks = previousTasks
@@ -226,18 +270,20 @@ function handleDelete(userId: string | number): void {
     users,
     query: searchInput.value,
     onDelete: handleDelete,
+    onEdit: handleEdit,
   })
   hideTaskError()
 
   void (async () => {
     try {
-      await deleteUser(userId)
-      users = await fetchUsers()
+      await deleteUserRecord(userId)
+      users = await loadUserRecords()
       renderUsers({
         userList,
         users,
         query: searchInput.value,
         onDelete: handleDelete,
+        onEdit: handleEdit,
       })
     } catch (error) {
       // Wenn der Server nicht erreichbar ist, rekonstruiere den Zustand vor dem Löschen.
@@ -247,11 +293,20 @@ function handleDelete(userId: string | number): void {
         users,
         query: searchInput.value,
         onDelete: handleDelete,
+        onEdit: handleEdit,
       })
       showTaskError('Keine Serververbindung. Benutzer wurde nicht gelöscht.')
       console.error(error)
     }
   })()
+}
+
+function handleEdit(user: User): void {
+  editingUserId = user.id
+  editUserNameInput.value = user.name
+  editUserEmailInput.value = user.email
+  editUserCompanyInput.value = user.company.name
+  editUserPanel.classList.remove('hidden')
 }
 
 // -------------------------------
@@ -262,12 +317,13 @@ async function loadUsers(): Promise<void> {
   userList.innerHTML = ''
 
   try {
-    users = await fetchUsers()
+    users = await loadUserRecords()
     renderUsers({
       userList,
       users,
       query: searchInput.value,
       onDelete: handleDelete,
+      onEdit: handleEdit,
     })
   } catch (error) {
     userList.innerHTML = '<li class="empty">Benutzerdaten konnten nicht geladen werden.</li>'
@@ -282,7 +338,7 @@ async function loadUsers(): Promise<void> {
 // -------------------------------
 async function loadTasks(): Promise<void> {
   try {
-    tasks = await fetchTasks()
+    tasks = await loadTaskRecords()
     renderTasksView()
   } catch (error) {
     console.error(error)
@@ -327,7 +383,7 @@ taskForm.addEventListener('submit', async (event) => {
   taskFormWrapper.classList.add('hidden')
 
   try {
-    const savedTask = await createTask({ title, completed: false })
+    const savedTask = await addTask({ title, completed: false })
     tasks = tasks.map((task) => (String(task.id) === String(optimisticTask.id) ? savedTask : task))
     renderTasksView()
   } catch (error) {
@@ -366,11 +422,7 @@ addUserForm.addEventListener('submit', async (event) => {
   loading.hidden = false
 
   try {
-    await createUser({
-      name,
-      email,
-      company: { name: companyName },
-    })
+    await addUser({ name, email, companyName })
 
     addUserForm.reset()
     addUserPanel.classList.add('hidden')
@@ -393,7 +445,87 @@ searchInput.addEventListener('input', (event) => {
     users,
     query: target.value,
     onDelete: handleDelete,
+    onEdit: handleEdit,
   })
+})
+
+cancelUserEdit.addEventListener('click', () => {
+  editUserPanel.classList.add('hidden')
+  editUserForm.reset()
+  editingUserId = null
+})
+
+editUserForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  if (editingUserId === null) {
+    return
+  }
+
+  const name = editUserNameInput.value.trim()
+  const email = editUserEmailInput.value.trim()
+  const companyName = editUserCompanyInput.value.trim()
+
+  if (!name || !email || !companyName) {
+    return
+  }
+
+  const previousUsers = [...users]
+  const userIdToUpdate = editingUserId
+  const userToUpdate = users.find((user) => String(user.id) === String(userIdToUpdate))
+
+  if (!userToUpdate) {
+    return
+  }
+
+  const optimisticUser: User = {
+    ...userToUpdate,
+    name,
+    email,
+    company: {
+      ...userToUpdate.company,
+      name: companyName,
+    },
+  }
+
+  users = users.map((user) =>
+    String(user.id) === String(userIdToUpdate) ? optimisticUser : user,
+  )
+  renderUsers({
+    userList,
+    users,
+    query: searchInput.value,
+    onDelete: handleDelete,
+    onEdit: handleEdit,
+  })
+  hideTaskError()
+
+  editUserForm.reset()
+  editUserPanel.classList.add('hidden')
+  editingUserId = null
+
+  try {
+    await updateUserRecord(userIdToUpdate, { name, email, companyName })
+    users = await loadUserRecords()
+    renderUsers({
+      userList,
+      users,
+      query: searchInput.value,
+      onDelete: handleDelete,
+      onEdit: handleEdit,
+    })
+  } catch (error) {
+    users = previousUsers
+    renderUsers({
+      userList,
+      users,
+      query: searchInput.value,
+      onDelete: handleDelete,
+      onEdit: handleEdit,
+    })
+    console.error(error)
+    showTaskError('Keine Serververbindung. Benutzer wurde nicht bearbeitet.')
+  }
 })
 
 // -------------------------------

@@ -6,14 +6,16 @@ interface RenderUsersOptions {
   users: User[]
   query: string
   onDelete: (userId: EntityId) => void
+  onEdit: (user: User) => void
 }
 
-// Filtert Nutzer nach Suchbegriff und rendert die Karten inklusive Löschen-Button.
+// Filtert Nutzer nach Suchbegriff und rendert die Karten inklusive Bearbeiten- und Löschen-Buttons.
 export function renderUsers({
   userList,
   users,
   query,
   onDelete,
+  onEdit,
 }: RenderUsersOptions): void {
   const normalizedQuery = query.trim().toLowerCase()
   const filteredUsers = users.filter((user) =>
@@ -30,7 +32,10 @@ export function renderUsers({
                 <p><strong>E-Mail:</strong> ${user.email}</p>
                 <p><strong>Firma:</strong> ${user.company.name}</p>
               </div>
-              <button class="delete-btn" type="button" data-user-id="${user.id}">Löschen</button>
+              <div class="user-card-actions">
+                <button class="edit-btn" type="button" data-user-id="${user.id}">Bearbeiten</button>
+                <button class="delete-btn" type="button" data-user-id="${user.id}">Löschen</button>
+              </div>
             </li>
           `,
         )
@@ -46,6 +51,19 @@ export function renderUsers({
       }
 
       onDelete(userId)
+    })
+  })
+
+  userList.querySelectorAll<HTMLButtonElement>('.edit-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const userId = button.dataset.userId
+      const user = users.find((entry) => String(entry.id) === String(userId))
+
+      if (!user) {
+        return
+      }
+
+      onEdit(user)
     })
   })
 }

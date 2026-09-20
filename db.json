@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "3",
-      "name": "Anna Weber",
+      "name": "Anna Weber1",
       "email": "anna.weber@example.com",
       "company": {
         "name": "Weber Solutions"
@@ -15,16 +15,14 @@
       "company": {
         "name": "Fischer Digital"
       }
-    },
-    {
-      "name": "test",
-      "email": "te@web.de",
-      "company": {
-        "name": "2"
-      },
-      "id": "3NNIOb8Cnnk"
     }
   ],
-  "tasks": [],
+  "tasks": [
+    {
+      "title": "1",
+      "completed": false,
+      "id": "grCJ2WckG6k"
+    }
+  ],
   "$schema": "./node_modules/json-server/schema.json"
 }

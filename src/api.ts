@@ -122,3 +122,22 @@ export async function deleteTask(taskId: EntityId): Promise<void> {
     throw new Error(`Fehler beim Löschen der Aufgabe: ${response.status}`)
   }
 }
+
+// bearbeitet einen nutzer anhand seiner ID und gibt den aktualisierten Benutzer zurück.
+export async function updateUser(userId: EntityId, updatedUser: Partial<CreateUserInput>): Promise<User> {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updatedUser),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Fehler beim Aktualisieren des Benutzers: ${response.status}`)
+  }
+
+  const data: unknown = await response.json()
+
+  return data as User
+}
