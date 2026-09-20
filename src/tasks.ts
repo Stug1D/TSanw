@@ -1,6 +1,6 @@
 import type { Task, User } from './types'
 
-// Aktualisiert den completed-Status im lokalen State, ohne den Server direkt zu fragen.
+// Aktualisiert den Status einer Aufgabe im lokalen State, damit die UI sofort reagiert, bevor der Server antwortet.
 export function updateTaskCompletion(
   tasks: Task[],
   taskId: string | number,
@@ -13,7 +13,7 @@ export function updateTaskCompletion(
   )
 }
 
-// Entfernt eine Aufgabe aus dem lokalen State.
+// Entfernt eine Aufgabe aus dem lokalen State, damit sie direkt aus der Liste verschwindet.
 export function deleteTaskFromList(
   tasks: Task[],
   taskId: string | number,
@@ -32,7 +32,7 @@ interface RenderTasksOptions {
   onDelete: (taskId: string | number) => void
 }
 
-// Rendert die Aufgabe-Liste und verbindet Checkboxen sowie Löschen-Buttons mit den Aktionen.
+// Rendert die Aufgabenliste und verbindet jede Checkbox und jeden Löschen-Button mit der passenden Aktion.
 export function renderTasks({
   taskList,
   tasks,

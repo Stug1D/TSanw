@@ -7,6 +7,7 @@ export interface UpdateUserInput {
   companyName: string
 }
 
+// Aktualisiert die Daten eines vorhandenen Benutzers und schreibt die Firma in das erwartete Format.
 export async function updateUserRecord(
   userId: EntityId,
   { name, email, companyName }: UpdateUserInput,

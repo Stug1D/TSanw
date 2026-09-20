@@ -10,7 +10,7 @@ interface RenderUsersOptions {
   onEdit: (user: User) => void
 }
 
-// Filtert Nutzer nach Suchbegriff und rendert die Karten inklusive Bearbeiten-, Löschen- und Aufgaben-Expansion.
+// Filtert Benutzer nach der aktuellen Suche und rendert deren Karten mit Aktionen und aufklappbarer Aufgabenliste.
 export function renderUsers({
   userList,
   users,

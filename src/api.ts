@@ -3,7 +3,7 @@ import type { EntityId, Task, User } from './types'
 // Basis-URL für den lokalen JSON Server.
 const API_BASE_URL = 'http://localhost:3000'
 
-// Lädt alle Benutzer aus der DB und wirft bei Fehlern einen Fehler.
+// Lädt alle Benutzer aus der JSON-Server-Datenbank und gibt sie als Array zurück.
 export async function fetchUsers(): Promise<User[]> {
   const response = await fetch(`${API_BASE_URL}/users`)
 
@@ -25,7 +25,7 @@ export interface CreateUserInput {
   }
 }
 
-// Sendet einen neuen Benutzer per POST an den Server.
+// Erstellt einen neuen Benutzer auf dem Backend und liefert den gespeicherten Datensatz zurück.
 export async function createUser(user: CreateUserInput): Promise<User> {
   const response = await fetch(`${API_BASE_URL}/users`, {
     method: 'POST',
@@ -44,7 +44,7 @@ export async function createUser(user: CreateUserInput): Promise<User> {
   return data as User
 }
 
-// Löscht einen Benutzer anhand seiner ID.
+// Entfernt einen Benutzer per ID aus der Datenbank.
 export async function deleteUser(userId: EntityId): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'DELETE',
@@ -55,7 +55,7 @@ export async function deleteUser(userId: EntityId): Promise<void> {
   }
 }
 
-// Lädt alle Aufgaben aus der DB.
+// Holt alle Aufgaben aus der JSON-Server-Datenbank und liefert sie als Liste zurück.
 export async function fetchTasks(): Promise<Task[]> {
   const response = await fetch(`${API_BASE_URL}/tasks`)
 
@@ -75,7 +75,7 @@ export interface CreateTaskInput {
   userId?: EntityId | null
 }
 
-// Sendet eine neue Aufgabe an den Server.
+// Legt eine neue Aufgabe im Backend an und gibt die gespeicherte Aufgabe zurück.
 export async function createTask(task: CreateTaskInput): Promise<Task> {
   const response = await fetch(`${API_BASE_URL}/tasks`, {
     method: 'POST',
@@ -94,7 +94,7 @@ export async function createTask(task: CreateTaskInput): Promise<Task> {
   return data as Task
 }
 
-// Aktualisiert nur den Status einer Aufgabe (erledigt / nicht erledigt).
+// Aktualisiert den Erledigt-Status einer Aufgabe im Backend und liefert das geänderte Objekt zurück.
 export async function toggleTask(taskId: EntityId, completed: boolean): Promise<Task> {
   const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
     method: 'PATCH',
@@ -113,7 +113,7 @@ export async function toggleTask(taskId: EntityId, completed: boolean): Promise<
   return data as Task
 }
 
-// Entfernt eine Aufgabe aus der DB.
+// Löscht eine Aufgabe anhand ihrer ID aus der Datenbank.
 export async function deleteTask(taskId: EntityId): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
     method: 'DELETE',
@@ -124,7 +124,7 @@ export async function deleteTask(taskId: EntityId): Promise<void> {
   }
 }
 
-// bearbeitet einen nutzer anhand seiner ID und gibt den aktualisierten Benutzer zurück.
+// Aktualisiert einen vorhandenen Benutzer mit neuen Daten und liefert den neuen Stand zurück.
 export async function updateUser(userId: EntityId, updatedUser: Partial<CreateUserInput>): Promise<User> {
   const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: 'PATCH',

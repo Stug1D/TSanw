@@ -7,6 +7,7 @@ export interface AddUserInput {
   companyName: string
 }
 
+// Speichert einen neuen Benutzer und wandelt die Formulardaten in das Backend-Format um.
 export async function addUser({ name, email, companyName }: AddUserInput): Promise<User> {
   return createUser({
     name,
